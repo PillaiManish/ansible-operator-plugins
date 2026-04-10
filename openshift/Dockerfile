@@ -1,5 +1,7 @@
 FROM registry.redhat.io/ubi10/go-toolset:10.1 AS builder
 
+USER root
+
 ENV GO111MODULE=on \
     GOFLAGS=-mod=vendor
 
