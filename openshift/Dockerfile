@@ -38,10 +38,35 @@ COPY ${REMOTE_SOURCES} ${REMOTE_SOURCES_DIR}
 # Copy our local ansible-runner-http replacement module
 COPY images/ansible-operator/ansible_runner_http /ansible_runner_http
 COPY openshift/install-ansible.sh .
-# ubi10/ubi:10.1 ships python3-urllib3 as an RPM-managed package; pip cannot
-# upgrade it because there is no RECORD file. Remove it first so pip can install
-# the version pinned in requirements.txt.
-RUN rpm -e --nodeps python3-urllib3 \
+# ubi10/ubi:10.1 ships many Python packages as RPM-managed installs that have
+# no pip RECORD file, causing pip to fail when requirements.txt pins different
+# versions. Remove all potentially conflicting RPM Python packages upfront so
+# pip can install the pinned versions cleanly. Uses || true per package so the
+# step succeeds even if a package is not present in the base image.
+RUN for pkg in \
+        python3-urllib3 \
+        python3-six \
+        python3-requests \
+        python3-idna \
+        python3-certifi \
+        python3-charset-normalizer \
+        python3-chardet \
+        python3-resolvelib \
+        python3-pyyaml \
+        python3-pyasn1 \
+        python3-pyasn1-modules \
+        python3-oauthlib \
+        python3-markupsafe \
+        python3-jinja2 \
+        python3-packaging \
+        python3-dateutil \
+        python3-pexpect \
+        python3-ptyprocess \
+        python3-lockfile \
+        python3-rsa \
+        python3-websocket-client; do \
+        rpm -e --nodeps "$pkg" 2>/dev/null || true; \
+    done \
     && chmod +x /install-ansible.sh \
     && ./install-ansible.sh
 
