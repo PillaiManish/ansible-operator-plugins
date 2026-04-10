@@ -38,7 +38,11 @@ COPY ${REMOTE_SOURCES} ${REMOTE_SOURCES_DIR}
 # Copy our local ansible-runner-http replacement module
 COPY images/ansible-operator/ansible_runner_http /ansible_runner_http
 COPY openshift/install-ansible.sh .
-RUN chmod +x /install-ansible.sh \
+# ubi10/ubi:10.1 ships python3-urllib3 as an RPM-managed package; pip cannot
+# upgrade it because there is no RECORD file. Remove it first so pip can install
+# the version pinned in requirements.txt.
+RUN rpm -e --nodeps python3-urllib3 \
+    && chmod +x /install-ansible.sh \
     && ./install-ansible.sh
 
 # Remove packages which are only needed for cachito
